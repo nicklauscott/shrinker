@@ -28,16 +28,18 @@ class TaskProcessingService(
             val videoMetaData = ffmpegService.getVideoDetails(task)
             val derivedName = try {
                 //videoMetaData["format"]["filename"]?.asString()?.split("/")[1]?.split(".")[0] ?: ""
-                videoMetaData["format"]["filename"]?.asString()?.takeLastWhile { it != '/' }?.split(".")[0] ?: ""
+                videoMetaData?.get("format")["filename"]?.asString()?.takeLastWhile { it != '/' }?.split(".")[0] ?: ""
             } catch (_: Exception) { "" }
             val fileSize = try {
-                videoMetaData["format"]["size"]?.asString()?.toLong() ?: 0L
+                videoMetaData?.get("format")["size"]?.asString()?.toLong() ?: 0L
             } catch (_: Exception) { 0L }
-            val otherDetails = videoMetaData["format"].toPrettyString().replace("\n", "")
+            val otherDetails = videoMetaData?.get("format")?.toPrettyString()?.replace("\n", "")
 
             val updatedTask = repository.updateTask(
                 taskId, task.copy(derivedName = derivedName, originalFileSize = fileSize, otherDetails = otherDetails)
             ) ?: return
+
+            log.debug("processTask <> update task - updatedTask: {},", updatedTask)
 
             ffmpegService.startCompression(
                 dbTask = updatedTask, metaData = videoMetaData,

@@ -26,7 +26,7 @@ class FfmpegService(private val repository: TaskRepository, private val s3Storag
     private data class CompressionJob(val process: Process, val outputPath: String)
     private val jobs = ConcurrentHashMap<UUID, CompressionJob>()
 
-    fun getVideoDetails(dbTask: TaskDetail): JsonNode {
+    fun getVideoDetails(dbTask: TaskDetail): JsonNode? {
         val command = listOf(
             "ffprobe", "-v", "error",   // "error" instead of "quiet" — still suppresses noise, but shows real failures
             "-print_format", "json",
@@ -42,24 +42,26 @@ class FfmpegService(private val repository: TaskRepository, private val s3Storag
         if (!finished) {
             process.destroyForcibly()
             log.error("getVideoDetails <> ffprobe timed out for url: ${dbTask.originalUrl}")
+            return null
         }
 
         if (process.exitValue() != 0 || stdout.isBlank()) {
             log.error("getVideoDetails <> ffprobe failed (exit=${process.exitValue()}): $stderr")
-
+            return null
         }
 
         return ObjectMapper().readTree(stdout)
     }
 
     fun startCompression(
-        dbTask: TaskDetail, outputPath: String, level: CompressionLevel, metaData: JsonNode
+        dbTask: TaskDetail, outputPath: String, level: CompressionLevel, metaData: JsonNode?
     ): UUID {
+        log.debug("startCompression <> dbTask: {}, outputPath: {}, CompressionLevel: {}", dbTask, outputPath, level)
         repository.updateTask(
             dbTask.id, dbTask.copy(status = TaskTable.Status.IN_PROGRESS, outputFilePath = outputPath)
         )
 
-        val totalDurationSeconds = metaData["format"]["duration"]?.asDouble() ?: 0.0
+        val totalDurationSeconds = metaData?.get("format")["duration"]?.asDouble() ?: 0.0
         val command = mutableListOf("ffmpeg", "-i", dbTask.originalUrl ?: "", "-y")
         command += level.flags
         command += outputPath
@@ -87,6 +89,7 @@ class FfmpegService(private val repository: TaskRepository, private val s3Storag
                             lastReportedProgress = progress
                             val updated = repository.getTask(dbTask.id)?.toDetail() ?: return@let
                             repository.updateTask(updated.id, updated.copy(progress = progress))
+                            log.debug("startCompression <> update db progress - progress: {},", progress)
                         }
                     }
                 }
@@ -115,7 +118,7 @@ class FfmpegService(private val repository: TaskRepository, private val s3Storag
                         finalFileSize = File(outputPath).length()
                     ) ?: return@thenAccept
                 repository.updateTask(updated.id, updated)
-                log.info("startCompression completed: output file: $outputPath")
+                log.info("startCompression completed <> output file: $outputPath")
             }
 
         }
