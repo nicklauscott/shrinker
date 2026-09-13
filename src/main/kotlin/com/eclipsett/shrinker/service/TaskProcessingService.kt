@@ -22,6 +22,7 @@ class TaskProcessingService(
     @Async
     fun processTask(taskId: UUID) {
         try {
+            log.error("processTask enter")
             val task = repository.getTask(taskId)?.toDetail() ?: return
 
             val videoMetaData = ffmpegService.getVideoDetails(task)
@@ -43,7 +44,7 @@ class TaskProcessingService(
                 outputPath = fileService.getOutputFile(updatedTask),
                 level = CompressionLevel.toCompressionLevel(task.compressionLevel),
             )
-        } catch (_: Exception) {}
+        } catch (ex: Exception) { log.error("processTask error: {}", ex.message) }
 
     }
 
