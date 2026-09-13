@@ -1,0 +1,27 @@
+spring:
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+app:
+  url: ${APP_BASE_URL}
+
+jwt:
+  secret: ${JWT_SECRET_V2_BASE64}
+
+s3:
+  endpoint: ${S3_ENDPOINT}
+  region: ${S3_REGION}
+  access-key: ${S3_ACCESS_KEY}
+  secret-key: ${S3_SECRET_KEY}
+
+enc:
+  base64Key: ${BASE64_MASTER_KEY}
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
