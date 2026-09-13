@@ -28,6 +28,7 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-jdbc:$exposed")
 
 	implementation("software.amazon.awssdk:s3:2.20.90")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")

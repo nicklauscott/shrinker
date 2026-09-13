@@ -38,5 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+Shrinker
 docker-compose.yml
 

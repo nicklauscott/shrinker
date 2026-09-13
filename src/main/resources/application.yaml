@@ -2,8 +2,8 @@ spring:
   application:
     name: shrinker
 
-profiles:
-  active: prod
+  profiles:
+    active: prod
 
 server:
   address: 0.0.0.0

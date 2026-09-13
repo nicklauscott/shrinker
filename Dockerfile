@@ -9,13 +9,13 @@ COPY gradlew .
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
 
-RUN ./gradlew dependencies --no-daemon
-#RUN gradle dependencies --no-daemon # remove later
+#RUN ./gradlew dependencies --no-daemon
+RUN gradle dependencies --no-daemon # remove later
 
 COPY src ./src
 
-RUN ./gradlew clean bootJar --no-daemon
-#RUN gradle clean bootJar --no-daemon # remove later
+#RUN ./gradlew clean bootJar --no-daemon
+RUN gradle clean bootJar --no-daemon # remove later
 
 
 # ---------- Stage 2: Run ----------
