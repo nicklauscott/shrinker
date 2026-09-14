@@ -90,21 +90,23 @@ class TaskProcessingService(
             } catch (_: Exception) { 0L }
             val otherDetails = videoMetaData?.get("format")?.toPrettyString()?.replace("\n", "")
 
+            val outputPath = fileService.getOutputFile(task.derivedName ?: task.name, task.id.toString())
             val updatedTask = repository.updateTask(
-                task.id, task.copy(derivedName = derivedName, originalFileSize = fileSize, otherDetails = otherDetails)
+                task.id, task.copy(
+                    derivedName = derivedName, originalFileSize = fileSize,
+                    otherDetails = otherDetails, outputFilePath = outputPath
+                )
             ) ?: return
 
             log.debug("advance processTask <> update task - updatedTask: {},", updatedTask)
 
             ffmpegService.startCompression(
-                dbTask = updatedTask, metaData = videoMetaData,
-                outputPath = fileService.getOutputFile(updatedTask),
+                dbTask = updatedTask, metaData = videoMetaData, outputPath = outputPath,
                 level = CompressionLevel.toCompressionLevel(task.compressionLevel)
             )
         } catch (ex: Exception) { log.error("advance processTask error: {}", ex.message) } finally {
             tasksQueue.remove(task.id) // remove precessed task
         }
-
     }
 
     private suspend fun processDeleteEvent(task: TaskDetail) {
