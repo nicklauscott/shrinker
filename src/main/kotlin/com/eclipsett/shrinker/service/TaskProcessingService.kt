@@ -8,12 +8,15 @@ import com.eclipsett.shrinker.model.entities.TaskTable
 import com.eclipsett.shrinker.repository.TaskRepository
 import com.eclipsett.shrinker.repository.dbEvents.DBEvent
 import com.eclipsett.shrinker.repository.dbEvents.EntityChangeNotifier
+import com.eclipsett.shrinker.service.util.extractFileNameFromLink
 import jakarta.annotation.PreDestroy
 import kotlinx.coroutines.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.File
+import java.net.URI
+import java.net.URLDecoder
 import java.util.*
 
 @Service
@@ -83,7 +86,8 @@ class TaskProcessingService(
 
             val videoMetaData = ffmpegService.getVideoDetails(task)
             val derivedName = try {
-                videoMetaData?.get("format")["filename"]?.asString()?.takeLastWhile { it != '/' }?.split(".")[0] ?: ""
+                videoMetaData?.get("format")?.get("tags")?.get("title")?.asString() ?:
+                    extractFileNameFromLink(task.originalUrl ?: "") ?: ""
             } catch (_: Exception) { "" }
             val fileSize = try {
                 videoMetaData?.get("format")["size"]?.asString()?.toLong() ?: 0L
@@ -129,3 +133,5 @@ class TaskProcessingService(
     fun shutDown() = scope.cancel()
 
 }
+
+
