@@ -6,9 +6,11 @@ import com.eclipsett.shrinker.model.dto.TaskRequestDTO
 import com.eclipsett.shrinker.model.dto.TaskResponseDTO
 import com.eclipsett.shrinker.model.entities.TaskEntity
 
-fun TaskRequestDTO.toEntity(): TaskEntity { // from client
+fun TaskRequestDTO.toEntity(bpp: Double? = null, verdict: String? = null): TaskEntity { // from client
     return TaskEntity.new {
         name = this@toEntity.name
+        this.bpp = bpp
+        this.verdict = verdict
         originalUrl = this@toEntity.originalUrl
         compressionLevel = this@toEntity.compressionLevel
     }

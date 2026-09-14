@@ -13,7 +13,6 @@ import com.eclipsett.shrinker.repository.TaskRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.io.File
 import java.util.UUID
 
 @Service
@@ -25,10 +24,15 @@ class TaskService(
 
     fun submitTask(requestDTO: TaskRequestDTO): TaskDetailDTO {
         val bppResult = compressionValidator.calculateBpp(requestDTO.originalUrl)
-        val updatedTask = repository.createTask(requestDTO).toDetail()
-            .copy(bpp = bppResult?.bpp, verdict = bppResult?.verdict)
-        repository.updateTask(updatedTask.id, updatedTask)
-        return updatedTask.toDTO()
+        val updatedTask = repository.createTask(requestDTO, bppResult?.bpp, verdict = bppResult?.verdict)
+        return updatedTask.toDetail().toDTO()
+    }
+
+    fun retryTask(idString: String): UUID? {
+        val id = try { UUID.fromString(idString) } catch (_: Exception) { null } ?: return null
+        val dbTask = repository.getTask(id) ?: return null
+        return repository
+            .updateTask(id, dbTask.toDetail().copy(status = TaskTable.Status.PENDING), true)?.id
     }
 
     fun getTasksByStatus(statusValue: String): List<TaskDetail> {
@@ -45,6 +49,10 @@ class TaskService(
             .map { it.toDetail() }
     }
 
+    fun getAllTask(): List<TaskDetail> {
+        return repository.getTaskAllTask { true }.map { it.toDetail() }
+    }
+
     fun getTaskById(id: String): TaskDetailDTO? {
         return try {
             val task = repository.getTask(UUID.fromString(id))?.toDetail()?.toDTO() ?: return null
@@ -53,19 +61,11 @@ class TaskService(
         } catch (_: Exception) { null }
     }
 
-    fun stopTaskById(id: String) {
-        try {
-            log.error("TaskService stopTaskById")
-            val task = repository.getTask(UUID.fromString(id))?.toDetail() ?: return
-            val updatedTask = task.copy(
-                status = TaskTable.Status.CANCELLED,
-                originalUrl = "${('A'..'z').random()}" +
-                        "${('A'..'z').random()}```" + task.originalUrl?.drop(5)
-            )
-            task.objectId?.let { s3StorageService.deleteFile(it) }
-            task.outputFilePath?.let { File(File(it).parent).deleteRecursively() }
-            repository.updateTask(updatedTask.id, updatedTask)
-        } catch (ex: Exception) { log.error("\n\nTaskService ex: ${ex.printStackTrace()}") }
+    fun stopAndDeleTaskById(id: String): Boolean {
+       return try {
+            val id = try { UUID.fromString(id) } catch (_: Exception) { null } ?: return false
+            return repository.deleteTask(id, true)
+        } catch (_: Exception) { false }
     }
 
 }

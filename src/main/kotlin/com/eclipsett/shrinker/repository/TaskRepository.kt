@@ -6,21 +6,26 @@ import com.eclipsett.shrinker.model.entities.TaskEntity
 import com.eclipsett.shrinker.model.entities.TaskTable
 import com.eclipsett.shrinker.model.util.toDetail
 import com.eclipsett.shrinker.model.util.toEntity
+import com.eclipsett.shrinker.repository.dbEvents.DBEvent
+import com.eclipsett.shrinker.repository.dbEvents.EntityChangeNotifier
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.deleteIgnoreWhere
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.util.*
+
 
 @Service
-class TaskRepository {
+class TaskRepository(private val notifier: EntityChangeNotifier) {
 
     init { transaction { SchemaUtils.create(TaskTable) } }
 
-    fun createTask(requestDTO: TaskRequestDTO): TaskEntity {
+    fun createTask(requestDTO: TaskRequestDTO, bpp: Double? = null, verdict: String? = null): TaskEntity {
         return transaction {
-            requestDTO.toEntity()
+            val entity = requestDTO.toEntity(bpp, verdict)
+            notifier.publishNonSuspendEvent(DBEvent.Created(entity.toDetail()))
+            entity
         }
     }
 
@@ -30,17 +35,19 @@ class TaskRepository {
         }
     }
 
-    fun deleteTask(id: UUID) {
-        transaction {
-            TaskTable.deleteIgnoreWhere {
-                TaskTable.id eq id
-            }
+    fun deleteTask(taskId: UUID, sendEvent: Boolean = false): Boolean {
+        return transaction {
+            val tempTask = TaskEntity[taskId]
+            val rows = TaskTable.deleteWhere { TaskTable.id eq taskId }
+            if (sendEvent && rows != 0)
+                notifier.publishNonSuspendEvent(DBEvent.Delete(tempTask.toDetail()))
+            rows != 0
         }
     }
 
-    fun updateTask(id: UUID, dto: TaskDetail): TaskDetail? {
+    fun updateTask(id: UUID, dto: TaskDetail, sendEvent: Boolean = false): TaskDetail? {
         return transaction {
-            TaskEntity.findByIdAndUpdate(id) {
+            val task = TaskEntity.findByIdAndUpdate(id) {
                 it.bpp = dto.bpp
                 it.status = dto.status
                 it.errors = dto.errors
@@ -56,6 +63,10 @@ class TaskRepository {
                 it.originalFileSize = dto.originalFileSize
                 it.updatedTimestamp = dto.updatedTimestamp
             }?.toDetail()
+            if (sendEvent) {
+                task?.let { notifier.publishNonSuspendEvent(DBEvent.Update(it)) }
+            }
+            task
         }
     }
 
@@ -63,7 +74,12 @@ class TaskRepository {
         return transaction {
             TaskEntity.find { TaskTable.status eq status }.toList()
         }
+    }
 
+    fun getTaskAllTask(predicate: (TaskEntity) -> Boolean): List<TaskEntity> {
+        return transaction {
+            buildList { addAll(TaskEntity.all().filter(predicate)) }
+        }
     }
 
 }
