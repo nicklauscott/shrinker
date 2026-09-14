@@ -5,7 +5,6 @@ import com.eclipsett.shrinker.compression.FileService
 import com.eclipsett.shrinker.compression.constant.CompressionLevel
 import com.eclipsett.shrinker.model.TaskDetail
 import com.eclipsett.shrinker.model.entities.TaskTable
-import com.eclipsett.shrinker.remote_storage.S3StorageService
 import com.eclipsett.shrinker.repository.TaskRepository
 import com.eclipsett.shrinker.repository.dbEvents.DBEvent
 import com.eclipsett.shrinker.repository.dbEvents.EntityChangeNotifier
@@ -21,7 +20,6 @@ import java.util.*
 class TaskProcessingService(
     private val ffmpegService: FfmpegService, private val fileService: FileService,
     private val repository: TaskRepository, private val notifier: EntityChangeNotifier,
-    private val s3StorageService: S3StorageService
 ) {
 
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -103,7 +101,9 @@ class TaskProcessingService(
                 outputPath = fileService.getOutputFile(updatedTask),
                 level = CompressionLevel.toCompressionLevel(task.compressionLevel)
             )
-        } catch (ex: Exception) { log.error("advance processTask error: {}", ex.message) }
+        } catch (ex: Exception) { log.error("advance processTask error: {}", ex.message) } finally {
+            tasksQueue.remove(task.id) // remove precessed task
+        }
 
     }
 

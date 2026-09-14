@@ -7,18 +7,3 @@ sealed interface DBEvent {
     data class Update(val task: TaskDetail): DBEvent
     data class Delete(val task: TaskDetail): DBEvent
 }
-
-/*
-
-
-my app
-  - Shrinker
-  - src
-     -- com
-       --- ...
-         ---- dbEvents
-           ----- DBEvents.kt
-
-
-
- */
