@@ -4,6 +4,7 @@ import com.eclipsett.shrinker.compression.FfmpegService
 import com.eclipsett.shrinker.compression.FileService
 import com.eclipsett.shrinker.compression.constant.CompressionLevel
 import com.eclipsett.shrinker.model.TaskDetail
+import com.eclipsett.shrinker.model.dto.ActiveProcessingTaskDTO
 import com.eclipsett.shrinker.model.entities.TaskTable
 import com.eclipsett.shrinker.repository.TaskRepository
 import com.eclipsett.shrinker.repository.dbEvents.DBEvent
@@ -15,8 +16,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.File
-import java.net.URI
-import java.net.URLDecoder
 import java.util.*
 
 @Service
@@ -81,7 +80,7 @@ class TaskProcessingService(
 
     private suspend fun processCreatedEvent(task: TaskDetail) {
         try {
-            log.error("advance processTask enter <> Task {} is being processed", task.id)
+            log.debug("advance processTask enter <> Task {} is being processed", task.id)
 
             val videoMetaData = ffmpegService.getVideoDetails(task)
             val derivedName = try {
@@ -94,12 +93,10 @@ class TaskProcessingService(
             val otherDetails = videoMetaData?.get("format")?.toPrettyString()?.replace("\n", "")
 
             val outputPath = fileService.getOutputFile(task.derivedName ?: task.name, task.id.toString())
-            val updatedTask = repository.updateTask(
-                task.id, task.copy(
+            val updatedTask = repository.updateTask(task.copy(
                     derivedName = derivedName, originalFileSize = fileSize,
                     otherDetails = otherDetails, outputFilePath = outputPath
-                )
-            ) ?: return
+            )) ?: return
 
             log.debug("advance processTask <> update task - updatedTask: {},", updatedTask)
 
@@ -107,7 +104,7 @@ class TaskProcessingService(
                 dbTask = updatedTask, metaData = videoMetaData, outputPath = outputPath,
                 level = CompressionLevel.toCompressionLevel(task.compressionLevel)
             )
-        } catch (ex: Exception) { log.error("advance processTask error: {}", ex.message) } finally {
+        } catch (ex: Exception) { log.info("advance processTask error: {}", ex.message) } finally {
             tasksQueue.remove(task.id) // remove precessed task
         }
     }
@@ -119,13 +116,21 @@ class TaskProcessingService(
         tasksQueue.remove(task.id) // delete task from queue
         val filePath = task.outputFilePath ?: return
         try { File(File(filePath).parent).deleteRecursively() // Delete locally file
-        } catch (_: Exception) { }
+        } catch (ex: Exception) { log.info("Error while processing Delete Event: {}", ex.message) }
     }
 
     private suspend fun processUpdatedEvent(task: TaskDetail) {
         log.info("processUpdatedEvent <> Task id: {}", task.id)
         processDeleteEvent(task) // Clean up the old task and process if the updated status is PENDING
         if (task.status == TaskTable.Status.PENDING) processCreatedEvent(task)
+    }
+
+    fun getActiveProcessingTask(): ActiveProcessingTaskDTO {
+        return ActiveProcessingTaskDTO(
+            tasksQueue.toMap(),
+            currentProcessingTask?.first.toString(),
+            taskQueueJob?.isActive == true
+        )
     }
 
     @PreDestroy

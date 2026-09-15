@@ -20,6 +20,7 @@ data class TaskDetail(
 
     val createdTimestamp: String,
     val updatedTimestamp: String,
+    val expirationTimestamp: String? = null,
 
     val bpp: Double? = null,
     val verdict: String? = null,

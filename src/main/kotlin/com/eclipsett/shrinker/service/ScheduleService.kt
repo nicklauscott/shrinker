@@ -1,9 +1,11 @@
 package com.eclipsett.shrinker.service
 
+import com.eclipsett.shrinker.model.TaskDetail
 import com.eclipsett.shrinker.model.entities.TaskEntity
 import com.eclipsett.shrinker.model.entities.TaskTable
 import com.eclipsett.shrinker.remote_storage.S3StorageService
 import com.eclipsett.shrinker.repository.TaskRepository
+import com.eclipsett.shrinker.service.util.parseDateTime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -34,19 +36,10 @@ class ScheduleService(private val repository: TaskRepository, private val s3Stor
         }
     }
 
-    private fun deleteTask(task: TaskEntity) {
+    private fun deleteTask(task: TaskDetail) {
         task.objectId?.let { s3StorageService.deleteFile(it) }
         task.outputFilePath?.let { File(File(it).parent).deleteRecursively() }
-        repository.deleteTask(task.id.value)
-    }
-
-    private fun parseDateTime(timeStamp: String): LocalDateTime {
-        return try {
-            LocalDateTime.parse(timeStamp)
-        } catch (ex: DateTimeParseException) {
-            log.warn("Failed to parse createdTimestamp '{}', treating as stale", timeStamp, ex)
-            LocalDateTime.now().minusDays(5)
-        }
+        repository.deleteTask(task.id)
     }
 
 }

@@ -67,9 +67,7 @@ class FfmpegService(
     ): UUID {
         val scope = currentCoroutineContext()
         log.debug("startCompression <> dbTask: {}, outputPath: {}, CompressionLevel: {}", dbTask, outputPath, level)
-        repository.updateTask(
-            dbTask.id, dbTask.copy(status = TaskTable.Status.IN_PROGRESS, outputFilePath = outputPath)
-        )
+        repository.updateTask(dbTask.copy(status = TaskTable.Status.IN_PROGRESS, outputFilePath = outputPath))
 
         val totalDurationSeconds = metaData?.get("format")["duration"]?.asDouble() ?: 0.0
         val command = mutableListOf("ffmpeg", "-i", dbTask.originalUrl ?: "", "-y")
@@ -98,7 +96,7 @@ class FfmpegService(
                             if (progress != lastReportedProgress) {
                                 lastReportedProgress = progress
                                 val updated = repository.getTask(dbTask.id)?.toDetail() ?: return@let
-                                repository.updateTask(updated.id, updated.copy(progress = progress))
+                                repository.updateTask(updated.copy(progress = progress))
                                 log.debug("startCompression <> update db progress - progress: {},", progress)
                             }
                             log.debug("Processing line: {}, progress: {}", line, progress)
@@ -121,19 +119,26 @@ class FfmpegService(
                     )
                     ?: return@thenAccept
                 if (p.exitValue() != 0) updated = updated.copy(errors = logs.toString().take(1028))
-                repository.updateTask(updated.id, updated)
+                repository.updateTask(updated)
 
                 if (p.exitValue() == 0) {
                     val objectId = "${dbTask.id}/${dbTask.name}.mp4"
                     s3StorageService.uploadToS3(objectId, outputPath)
+                    val finalFileSize = File(outputPath).length()
                     val updated = repository.getTask(dbTask.id)?.toDetail()
                         ?.copy(
                             objectId = objectId, outputFilePath = outputPath,
                             updatedTimestamp = LocalDateTime.now().toString(),
-                            finalFileSize = File(outputPath).length()
+                            finalFileSize = finalFileSize
                         ) ?: return@thenAccept
-                    repository.updateTask(updated.id, updated)
-                    emailService.processAndSendEmail(updated)
+                    repository.updateTask(updated)?.let {
+                        val presignedRequest = let { s3StorageService.getPresignedUrl(objectId) }
+                        emailService.processAndSendEmail(it.copy(
+                            compressedFileUrl = presignedRequest?.presignedUrl,
+                            expirationTimestamp = presignedRequest?.expirationDate,
+                            finalFileSize = finalFileSize
+                        ))
+                    }
                     log.info("File process completed <> Local file: {} - S3 Object id: {}", outputPath, objectId)
                 }
             } else {

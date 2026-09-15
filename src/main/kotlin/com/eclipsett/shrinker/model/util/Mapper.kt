@@ -5,17 +5,26 @@ import com.eclipsett.shrinker.model.dto.TaskDetailDTO
 import com.eclipsett.shrinker.model.dto.TaskRequestDTO
 import com.eclipsett.shrinker.model.dto.TaskResponseDTO
 import com.eclipsett.shrinker.model.entities.TaskEntity
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val log: Logger = LoggerFactory.getLogger("com.eclipsett.shrinker.model.util.Mapper.kt")
 
 // from client
-fun TaskRequestDTO.toEntity(bpp: Double? = null, verdict: String? = null, callback:(TaskEntity) -> Unit): TaskEntity {
-    return TaskEntity.new {
-        name = this@toEntity.name
-        userEMail = this@toEntity.email
-        this.bpp = bpp
-        this.verdict = verdict
-        originalUrl = this@toEntity.originalUrl
-        compressionLevel = this@toEntity.compressionLevel
-    } .apply { callback(this) }
+fun TaskRequestDTO.toEntity(bpp: Double? = null, verdict: String? = null): TaskDetail? {
+    return try {
+        TaskEntity.new {
+            name = this@toEntity.name
+            userEMail = this@toEntity.email
+            this.bpp = bpp
+            this.verdict = verdict
+            originalUrl = this@toEntity.originalUrl
+            compressionLevel = this@toEntity.compressionLevel
+        }.toDetail()
+    } catch (ex: Exception) {
+        log.info("Error saving task: {}", ex.message)
+        null
+    }
 }
 
 fun TaskEntity.toDetail(): TaskDetail { // to client; add compressedFileUrl dynamically

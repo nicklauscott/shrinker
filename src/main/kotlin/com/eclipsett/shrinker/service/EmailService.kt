@@ -2,6 +2,7 @@ package com.eclipsett.shrinker.service
 
 import com.eclipsett.shrinker.model.TaskDetail
 import com.eclipsett.shrinker.model.util.formatFileSize
+import com.eclipsett.shrinker.service.util.formatDateTime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ResourceLoader
@@ -24,20 +25,22 @@ class EmailService(private val mailSender: JavaMailSender, private val resourceL
         messageHelper.setSubject(subject)
         messageHelper.setText(content, true)
         mailSender.send(message)
-        log.info("File Processing Complete email sent to {}", to)
+        log.info("Email sent to {}", to)
     }
 
     fun processAndSendEmail(task: TaskDetail) {
         try {
-            log.info("Processing email: task: {}", task.userEMail)
             val userEMail = task.userEMail ?: return
+            if (userEMail.isBlank()) return
+            log.info("Preparing mail for: {}", task.userEMail)
+
             val resource = resourceLoader
                 .getResource("classpath:" + "templates/File_process_complete_email_template.html")
             var emailContent = Files.readString(resource.file.toPath())
             mapData(task).forEach { (key, value) ->
                 emailContent = emailContent.replace(key, value)
             }
-            sendMail(userEMail, "File Processing Complete", emailContent)
+            sendMail(userEMail, "File Processing Completed", emailContent)
         } catch (ex: Exception) {
             log.info("Error occurred while processing email. {}", ex.message)
         }
@@ -46,7 +49,7 @@ class EmailService(private val mailSender: JavaMailSender, private val resourceL
     private fun mapData(task: TaskDetail): Map<String, String> {
         val obj = ObjectMapper().readTree(task.otherDetails ?: "")
         val data = HashMap<String, String>()
-        data["{{userName}}"] = ""
+        data["{{userName}}"] = task.userEMail?.split("@")[0]?.replaceFirstChar { it.uppercase() } ?: ""
         data["{{fileName}}"] = task.name
         data["{{originalFileSize}}"] = formatFileSize(task.originalFileSize ?: 0)
         data["{{finalFileSize}}"] = formatFileSize(task.finalFileSize ?: 0)
@@ -54,9 +57,9 @@ class EmailService(private val mailSender: JavaMailSender, private val resourceL
         data["{{compressionLevel}}"] = task.compressionLevel
         data["{{mediaDuration}}"] = secondsToTimeString(obj?.get("duration")?.asString() ?: "")
         data["{{status}}"] = task.status.toString()
-        data["{{completedAt}}"] = task.updatedTimestamp
+        data["{{completedAt}}"] = formatDateTime(task.updatedTimestamp)
         data["{{downloadUrl}}"] = task.compressedFileUrl ?: ""
-        data["{{urlExpiration}}"] = "4 hrs"
+        data["{{urlExpiration}}"] = formatDateTime(task.expirationTimestamp ?: "")// "4 hrs"
         return data
     }
 

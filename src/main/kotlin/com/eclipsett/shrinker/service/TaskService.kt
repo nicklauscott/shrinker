@@ -3,6 +3,7 @@ package com.eclipsett.shrinker.service
 import com.eclipsett.shrinker.compression.CompressionValidator
 import com.eclipsett.shrinker.exception.InvalidStatusNumber
 import com.eclipsett.shrinker.model.TaskDetail
+import com.eclipsett.shrinker.model.dto.ActiveProcessingTaskDTO
 import com.eclipsett.shrinker.model.dto.TaskDetailDTO
 import com.eclipsett.shrinker.model.dto.TaskRequestDTO
 import com.eclipsett.shrinker.model.entities.TaskTable
@@ -17,22 +18,24 @@ import java.util.UUID
 
 @Service
 class TaskService(
-    private val repository: TaskRepository, private val compressionValidator: CompressionValidator,
-    private val s3StorageService: S3StorageService
+    private val repository: TaskRepository,
+    private val compressionValidator: CompressionValidator,
+    private val s3StorageService: S3StorageService,
+    private val processingService: TaskProcessingService,
 ) {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
-    fun submitTask(requestDTO: TaskRequestDTO): TaskDetailDTO {
+    fun submitTask(requestDTO: TaskRequestDTO): TaskDetailDTO? {
         val bppResult = compressionValidator.calculateBpp(requestDTO.originalUrl)
         val updatedTask = repository.createTask(requestDTO, bppResult?.bpp, verdict = bppResult?.verdict)
-        return updatedTask.toDetail().toDTO()
+        return updatedTask?.toDTO()
     }
 
     fun retryTask(idString: String): UUID? {
         val id = try { UUID.fromString(idString) } catch (_: Exception) { null } ?: return null
         val dbTask = repository.getTask(id) ?: return null
-        return repository
-            .updateTask(id, dbTask.toDetail().copy(status = TaskTable.Status.PENDING), true)?.id
+        return repository.updateTask(dbTask.toDetail()
+            .copy(status = TaskTable.Status.PENDING), true)?.id
     }
 
     fun getTasksByStatus(statusValue: String): List<TaskDetail> {
@@ -46,11 +49,10 @@ class TaskService(
         } else TaskTable.Status.toStatus(statusValue)
 
         return repository.getTaskByStatus(status)
-            .map { it.toDetail() }
     }
 
     fun getAllTask(): List<TaskDetail> {
-        return repository.getTaskAllTask { true }.map { it.toDetail() }
+        return repository.getTaskAllTask { true }
     }
 
     fun getTaskById(id: String): TaskDetailDTO? {
@@ -66,6 +68,10 @@ class TaskService(
             val id = try { UUID.fromString(id) } catch (_: Exception) { null } ?: return false
             return repository.deleteTask(id, true)
         } catch (_: Exception) { false }
+    }
+
+    fun getActiveProcessingTask(): ActiveProcessingTaskDTO {
+        return processingService.getActiveProcessingTask()
     }
 
 }

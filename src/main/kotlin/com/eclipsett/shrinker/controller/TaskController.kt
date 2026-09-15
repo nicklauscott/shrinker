@@ -1,5 +1,6 @@
 package com.eclipsett.shrinker.controller
 
+import com.eclipsett.shrinker.model.dto.ActiveProcessingTaskDTO
 import com.eclipsett.shrinker.model.dto.TaskDetailDTO
 import com.eclipsett.shrinker.model.dto.TaskRequestDTO
 import com.eclipsett.shrinker.model.dto.TaskResponseDTO
@@ -22,7 +23,9 @@ class TaskController(private val service: TaskService) {
     @Operation(description = "Submit new task")
     fun submitTask(@Valid @RequestBody requestDTO: TaskRequestDTO): ResponseEntity<TaskResponseDTO> {
         val task = service.submitTask(requestDTO)
-        return ResponseEntity(task.toResponse(), HttpStatus.CREATED)
+        return if (task == null) {
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        } else ResponseEntity(task.toResponse(), HttpStatus.CREATED)
     }
 
     @GetMapping("/status={statusValue}")
@@ -58,6 +61,12 @@ class TaskController(private val service: TaskService) {
     fun stopTasksById(@PathVariable("id") idString: String): ResponseEntity<*> {
         return if ( service.stopAndDeleTaskById(idString)) ResponseEntity("", HttpStatus.GONE)
         else ResponseEntity("", HttpStatus.NOT_FOUND)
+    }
+
+    @GetMapping("/active")
+    @Operation(description = "Get active task processing details")
+    fun getActiveProcessingTask(): ActiveProcessingTaskDTO {
+        return service.getActiveProcessingTask()
     }
 
 }

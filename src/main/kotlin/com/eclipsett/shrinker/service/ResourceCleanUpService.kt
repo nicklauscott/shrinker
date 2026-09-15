@@ -11,8 +11,7 @@ class ResourceCleanUpService(private val fileService: FileService) {
     @PreDestroy
     fun cleanUp() {
         println("Spring Boot is shutting down! Deleting app storage...")
-        if (System.getProperty("java.home").contains("Users/mac"))
-            ShrinkerDB.appDir.deleteRecursively()
+        if (System.getProperty("java.home").contains("Users/mac")) ShrinkerDB.appDir.deleteRecursively()
         else fileService.tempDir.deleteRecursively()
     }
 
