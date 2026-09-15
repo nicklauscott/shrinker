@@ -8,6 +8,7 @@ object TaskTable: UUIDTable("task") {
 
     var name = varchar("name", 128)
     var derivedName = varchar("derivedName", 128).nullable()
+    var userEMail = varchar("userEMail", 128).nullable()
 
     var compressionLevel = varchar("compressionLevel", 10)
         .default(CompressionLevel.MODERATE.name)

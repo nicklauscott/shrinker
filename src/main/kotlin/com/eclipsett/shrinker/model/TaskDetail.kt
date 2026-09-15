@@ -11,6 +11,7 @@ data class TaskDetail(
     val derivedName: String?,
     val originalUrl: String? = null,
     val outputFilePath: String? = null,
+    val userEMail: String? = null,
 
     val status: TaskTable.Status = TaskTable.Status.PENDING,
     val objectId: String? = null,

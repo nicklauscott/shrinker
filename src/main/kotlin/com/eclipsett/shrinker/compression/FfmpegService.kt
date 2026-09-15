@@ -6,6 +6,7 @@ import com.eclipsett.shrinker.model.entities.TaskTable
 import com.eclipsett.shrinker.model.util.toDetail
 import com.eclipsett.shrinker.remote_storage.S3StorageService
 import com.eclipsett.shrinker.repository.TaskRepository
+import com.eclipsett.shrinker.service.EmailService
 import jakarta.annotation.PreDestroy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 @Service
-class FfmpegService(private val repository: TaskRepository, private val s3StorageService: S3StorageService) {
+class FfmpegService(
+    private val repository: TaskRepository, private val s3StorageService: S3StorageService,
+    private val emailService: EmailService
+) {
 
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
@@ -129,6 +133,7 @@ class FfmpegService(private val repository: TaskRepository, private val s3Storag
                             finalFileSize = File(outputPath).length()
                         ) ?: return@thenAccept
                     repository.updateTask(updated.id, updated)
+                    emailService.processAndSendEmail(updated)
                     log.info("File process completed <> Local file: {} - S3 Object id: {}", outputPath, objectId)
                 }
             } else {

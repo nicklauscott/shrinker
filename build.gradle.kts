@@ -31,6 +31,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+	implementation("org.springframework.boot:spring-boot-starter-mail")
 
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")

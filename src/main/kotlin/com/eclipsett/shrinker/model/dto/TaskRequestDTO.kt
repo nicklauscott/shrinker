@@ -12,5 +12,6 @@ data class TaskRequestDTO(
     @Size(min = 3, max = 1024, message = "OriginalUrl must be between 3 and 1024 characters")
     val originalUrl: String,
 
-    var compressionLevel: String = "Mild"
+    var compressionLevel: String = "Mild",
+    var email: String = ""
 )

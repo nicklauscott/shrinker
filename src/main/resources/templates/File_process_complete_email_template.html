@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Processing Complete</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f5f7; font-family:Arial, Helvetica, sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7; padding:32px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background-color:#1f2937; padding:24px 32px;">
+                        <table width="100%" role="presentation">
+                            <tr>
+                                <td>
+                                    <span style="color:#ffffff; font-size:18px; font-weight:bold;">File Processing Complete</span>
+                                </td>
+                                <td align="right">
+                                    <span style="background-color:#16a34a; color:#ffffff; font-size:12px; font-weight:bold; padding:4px 10px; border-radius:12px;">{{status}}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding:32px;">
+                        <p style="font-size:15px; color:#111827; margin:0 0 8px;">Hi {{userName}},</p>
+                        <p style="font-size:15px; color:#374151; line-height:1.5; margin:0 0 24px;">
+                            Your file has finished processing. Here's a summary of the job:
+                        </p>
+
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px;">
+                            <tr>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px; width:40%;">File name</td>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#111827; font-size:13px; font-weight:bold; word-break:break-all;">{{fileName}}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Original size</td>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#111827; font-size:13px; font-weight:bold;">{{originalFileSize}}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Final size</td>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#111827; font-size:13px; font-weight:bold;">{{finalFileSize}}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Space saved</td>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#111827; font-size:13px; font-weight:bold;">{{spaceSavedPercent}}%</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Compression level</td>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#111827; font-size:13px; font-weight:bold;">{{compressionLevel}}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Duration</td>
+                                <td style="padding:12px 16px; border-bottom:1px solid #e5e7eb; color:#111827; font-size:13px; font-weight:bold;">{{mediaDuration}}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px 16px; color:#6b7280; font-size:13px;">Processed on</td>
+                                <td style="padding:12px 16px; color:#111827; font-size:13px; font-weight:bold;">{{completedAt}}</td>
+                            </tr>
+                        </table>
+
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+                            <tr>
+                                <td align="center">
+                                    <a href="{{downloadUrl}}" style="background-color:#2563eb; color:#ffffff; text-decoration:none; font-size:14px; font-weight:bold; padding:12px 28px; border-radius:6px; display:inline-block;">
+                                        Download File
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-size:12px; color:#9ca3af; margin:24px 0 0; text-align:center;">
+                            This link will expire on {{urlExpiration}}.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="padding:20px 32px; background-color:#f9fafb; border-top:1px solid #e5e7eb;">
+                        <p style="font-size:12px; color:#9ca3af; margin:0; text-align:center;">
+                            You're receiving this because you submitted a file for processing. If this wasn't you, please ignore this email.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

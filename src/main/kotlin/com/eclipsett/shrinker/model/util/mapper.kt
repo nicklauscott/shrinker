@@ -6,14 +6,16 @@ import com.eclipsett.shrinker.model.dto.TaskRequestDTO
 import com.eclipsett.shrinker.model.dto.TaskResponseDTO
 import com.eclipsett.shrinker.model.entities.TaskEntity
 
-fun TaskRequestDTO.toEntity(bpp: Double? = null, verdict: String? = null): TaskEntity { // from client
+// from client
+fun TaskRequestDTO.toEntity(bpp: Double? = null, verdict: String? = null, callback:(TaskEntity) -> Unit): TaskEntity {
     return TaskEntity.new {
         name = this@toEntity.name
+        userEMail = this@toEntity.email
         this.bpp = bpp
         this.verdict = verdict
         originalUrl = this@toEntity.originalUrl
         compressionLevel = this@toEntity.compressionLevel
-    }
+    } .apply { callback(this) }
 }
 
 fun TaskEntity.toDetail(): TaskDetail { // to client; add compressedFileUrl dynamically
@@ -26,6 +28,7 @@ fun TaskEntity.toDetail(): TaskDetail { // to client; add compressedFileUrl dyna
         verdict = verdict,
         progress = progress,
         objectId = objectId,
+        userEMail = userEMail,
         derivedName = derivedName,
         originalUrl = originalUrl,
         otherDetails = otherDetails,

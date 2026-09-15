@@ -34,12 +34,11 @@ class TaskProcessingService(
 
     init {
         scope.launch {
-            delay(10000)
             notifier.events.collect { event ->
                 log.info("DB event collected: {}", event::class)
 
                 if (event is DBEvent.Created && (event.task.bpp == null || event.task.bpp > 0.08)) {
-                    tasksQueue[event.task.id] = event
+                    if (repository.getTask(event.task.id) != null) tasksQueue[event.task.id] = event
                 }
 
                 if (event is DBEvent.Delete) tasksQueue[event.task.id] = event

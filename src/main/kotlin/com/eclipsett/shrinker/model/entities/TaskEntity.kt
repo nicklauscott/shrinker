@@ -10,6 +10,7 @@ class TaskEntity(id: EntityID<UUID>): UUIDEntity(id) {
 
     var name by TaskTable.name
     var status by TaskTable.status
+    var userEMail by TaskTable.userEMail
     var errors by TaskTable.errors
     var objectId by TaskTable.objectId
     var progress by TaskTable.progress

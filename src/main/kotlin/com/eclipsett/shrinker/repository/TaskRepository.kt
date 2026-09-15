@@ -23,17 +23,16 @@ class TaskRepository(private val notifier: EntityChangeNotifier) {
 
     fun createTask(requestDTO: TaskRequestDTO, bpp: Double? = null, verdict: String? = null): TaskEntity {
         return transaction {
-            val entity = requestDTO.toEntity(bpp, verdict)
-            notifier.publishNonSuspendEvent(DBEvent.Created(entity.toDetail()))
+            val entity = requestDTO.toEntity(bpp, verdict) {
+                notifier.publishNonSuspendEvent(DBEvent.Created(it.toDetail()))
+            }
             entity
         }
     }
 
-    fun getTask(id: UUID): TaskEntity? {
-        return transaction {
-            TaskEntity[id]
-        }
-    }
+    fun getTask(id: UUID): TaskEntity? =
+        try { transaction { TaskEntity[id] } } catch (_: Exception) { null }
+
 
     fun deleteTask(taskId: UUID, sendEvent: Boolean = false): Boolean {
         return transaction {
